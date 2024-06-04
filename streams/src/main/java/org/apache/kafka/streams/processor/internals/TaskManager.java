@@ -811,8 +811,14 @@ public class TaskManager {
 
     private void addTasksToStateUpdater() {
         for (final Task task : tasks.drainPendingTaskToInit()) {
-            task.initializeIfNeeded();
-            stateUpdater.add(task);
+            try {
+                task.initializeIfNeeded();
+                stateUpdater.add(task);
+            } catch (final RuntimeException e) {
+                // need to add task back to the bookkeeping to be handled by the stream thread
+                tasks.addTask(task);
+                taskExceptions.put(task.id(), e);
+            }
         }
     }
 
